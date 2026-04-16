@@ -1,0 +1,6 @@
+[gd_resource type="ArrayMesh" format=3 uid="uid://cy6fcypwhkqe3"]
+
+[ext_resource type="Script" uid="uid://nj8qje1qobv2" path="res://WorldGen/SurfaceMesh/Chunks/chunkGenerator.gd" id="1_ds8ea"]
+
+[resource]
+script = ExtResource("1_ds8ea")

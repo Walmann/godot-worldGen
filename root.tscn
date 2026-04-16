@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://cki58bf1i25pd"]
+
+[ext_resource type="PackedScene" uid="uid://dpkuqdljvtxxr" path="res://WorldGen/SurfaceMesh/surface_generator.tscn" id="1_pq8q7"]
+[ext_resource type="Texture2D" uid="uid://csegm47q88hso" path="res://icon.svg" id="2_pyidc"]
+
+[sub_resource type="TextMesh" id="TextMesh_28aoi"]
+text = "⬆️"
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_28aoi"]
+
+[sub_resource type="Sky" id="Sky_jnlp7"]
+sky_material = SubResource("ProceduralSkyMaterial_28aoi")
+
+[sub_resource type="Environment" id="Environment_l8v81"]
+background_mode = 2
+sky = SubResource("Sky_jnlp7")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_pyidc"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vvh5c"]
+width = 16
+height = 16
+noise = SubResource("FastNoiseLite_pyidc")
+
+[node name="Root" type="Node3D" unique_id=1661414477]
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=509971406]
+transform = Transform3D(7.52, 0, 0, 0, -3.2870963e-07, -7.52, 0, 7.52, -3.2870963e-07, -1.0152687, 0, 2.4676015)
+mesh = SubResource("TextMesh_28aoi")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=589035118]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0.6293547, 4.6388288, 2.0139904)
+environment = SubResource("Environment_l8v81")
+current = true
+
+[node name="surfaceGenerator" parent="." unique_id=1643412213 instance=ExtResource("1_pq8q7")]
+noisemap = SubResource("NoiseTexture2D_vvh5c")
+texture = ExtResource("2_pyidc")
+chunk_size = {
+"height": 16,
+"width": 16
+}

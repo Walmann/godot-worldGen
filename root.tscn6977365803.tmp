@@ -1,0 +1,58 @@
+[gd_scene format=4 uid="uid://cki58bf1i25pd"]
+
+[ext_resource type="Script" uid="uid://nj8qje1qobv2" path="res://mesh_instance_3d.gd" id="1_pq8q7"]
+[ext_resource type="Texture2D" uid="uid://csegm47q88hso" path="res://icon.svg" id="2_pyidc"]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_pyidc"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 3, 1e-05, 3),
+"attribute_data": PackedByteArray("AAAAAAAAAACrqqo+AAAAAKuqKj8AAAAAAACAPwAAAAAAAAAAq6qqPquqqj6rqqo+q6oqP6uqqj4AAIA/q6qqPgAAAACrqio/q6qqPquqKj+rqio/q6oqPwAAgD+rqio/AAAAAAAAgD+rqqo+AACAP6uqKj8AAIA/AACAPwAAgD8="),
+"format": 34359742487,
+"index_count": 48,
+"index_data": PackedByteArray("AAABAAAAAQACAAEAAgADAAIAAwAEAAMAAQACAAQAAgADAAUAAwAEAAYABAAFAAcAAgADAAgAAwAEAAkABAAFAAoABQAGAAsAAwAEAAwABAAFAA0ABQAGAA4ABgAHAA8A"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 16,
+"vertex_data": PackedByteArray("AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAQAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAIA/AAAAQAAAAAAAAIA/AABAQAAAAAAAAIA/AAAAAAAAAAAAAABAAACAPwAAAAAAAABAAAAAQAAAAAAAAABAAABAQAAAAAAAAABAAAAAAAAAAAAAAEBAAACAPwAAAAAAAEBAAAAAQAAAAAAAAEBAAABAQAAAAAAAAEBA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/78=")
+}]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vvh5c"]
+albedo_texture = ExtResource("2_pyidc")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_pq8q7"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_pyidc"]
+noise = SubResource("FastNoiseLite_pq8q7")
+
+[sub_resource type="TextMesh" id="TextMesh_28aoi"]
+text = "⬆️"
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_28aoi"]
+
+[sub_resource type="Sky" id="Sky_jnlp7"]
+sky_material = SubResource("ProceduralSkyMaterial_28aoi")
+
+[sub_resource type="Environment" id="Environment_l8v81"]
+background_mode = 2
+sky = SubResource("Sky_jnlp7")
+
+[node name="Root" type="Node3D" unique_id=1661414477]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1542671855]
+mesh = SubResource("ArrayMesh_pyidc")
+surface_material_override/0 = SubResource("StandardMaterial3D_vvh5c")
+script = ExtResource("1_pq8q7")
+surface_size = {
+"height": 4,
+"width": 4
+}
+noisemap = SubResource("NoiseTexture2D_pyidc")
+texture = ExtResource("2_pyidc")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=509971406]
+transform = Transform3D(7.52, 0, 0, 0, -3.2870963e-07, -7.52, 0, 7.52, -3.2870963e-07, -1.0152687, 0, 2.4676015)
+mesh = SubResource("TextMesh_28aoi")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=589035118]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 3.3472648, 0.8864752)
+environment = SubResource("Environment_l8v81")
