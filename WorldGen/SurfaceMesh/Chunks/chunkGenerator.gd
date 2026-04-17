@@ -11,7 +11,7 @@ extends MeshInstance3D
 
 var chunk_noisemap: NoiseTexture2D
 var chunk_material: StandardMaterial3D
-var chunk_size: Dictionary = {"height": 4, "width": 4}
+var chunk_size: Dictionary
 var chunk_skylimit: int
 
 #func _ready() -> void:
@@ -22,7 +22,11 @@ var chunk_skylimit: int
 
 
 func get_noise_height(cords: Vector2i):
-	var data = chunk_noisemap.noise.get_noise_2dv(cords) * chunk_skylimit
+	var data: float = chunk_noisemap.noise.get_noise_2dv(cords) * chunk_skylimit
+	
+	# This is for debugging. Creates a flat map
+	#var data: float = 0.0
+	
 	return data
 	
 
@@ -152,14 +156,12 @@ func gen_edges() -> PackedInt32Array:
 		pass
 	return edges
 
-func generateChunk(noisemap: NoiseTexture2D, material: StandardMaterial3D, skylimit: int):
+func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, skylimit: int, Chunk_size: Dictionary):
 	
-	chunk_noisemap = noisemap
-	chunk_material = material
-	
-	# Generate noisemap: 
-	#_generate_noise()
-	
+	chunk_noisemap = Noisemap
+	chunk_material = c_material
+	chunk_size     = Chunk_size
+	chunk_skylimit = skylimit	
 	
 	# Generate surface Mesh
 	mesh = ArrayMesh.new()
