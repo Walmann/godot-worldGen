@@ -1,6 +1,6 @@
 @tool
 class_name SurfaceChunk
-extends MeshInstance3D
+extends Node3D
 
 
 #@export var chunk_size: Dictionary = {"height": 512, "width": 512, "upwards": 512}
@@ -9,10 +9,17 @@ extends MeshInstance3D
 #
 #@export_tool_button("Generate Mesh", "Callable") var generate_tool_button = generateChunk
 
+
+var chunk_mesh: MeshInstance3D
 var chunk_noisemap: NoiseTexture2D
 var chunk_material: StandardMaterial3D
 var chunk_size: Dictionary
 var chunk_skylimit: int
+
+
+## The amount to divide chunk_size with. This is to control LOD levels. 
+var chunk_LOD_Level: int
+
 
 #func _ready() -> void:
 	#generateChunk()
@@ -94,9 +101,9 @@ func gen_edges() -> PackedInt32Array:
 	var edges = PackedInt32Array()
 
 	# This generates triangles
-	var curr_triangle: int = 0
-	for curr_height in chunk_size.height: # X = Vertical, is Z in Vector
-		for curr_width in chunk_size.width: # Y = Horizontal, is Z in Vector
+	for curr_height in range(chunk_size.height - 1): # X = Vertical, is Z in Vector
+		for curr_width in range(chunk_size.width - 1): # Y = Horizontal, is Z in Vector
+			var curr_triangle = curr_height * chunk_size.width + curr_width
 			var edge1 = curr_triangle
 			var edge2 = curr_triangle + 1
 			var edge3 = curr_triangle + chunk_size.width
@@ -156,15 +163,29 @@ func gen_edges() -> PackedInt32Array:
 		pass
 	return edges
 
-func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, skylimit: int, Chunk_size: Dictionary):
+
+func gen_collision():
+	var curr_coll = CollisionShape3D.new()
+	curr_coll.shape = chunk_mesh.mesh.create_trimesh_shape()
+	
+	var curr_staticBody = StaticBody3D.new()
+	curr_staticBody.add_child(curr_coll)
+	
+	add_child(curr_staticBody)
+	pass
+
+func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, skylimit: int, Chunk_size: Dictionary, LOD_level: int):
 	
 	chunk_noisemap = Noisemap
 	chunk_material = c_material
 	chunk_size     = Chunk_size
-	chunk_skylimit = skylimit	
+	chunk_skylimit = skylimit		
+	chunk_LOD_Level = LOD_level
+	
+	chunk_mesh = MeshInstance3D.new()
 	
 	# Generate surface Mesh
-	mesh = ArrayMesh.new()
+	chunk_mesh.mesh = ArrayMesh.new()
 
 	var surface_array = []
 	surface_array.resize(Mesh.ARRAY_MAX)
@@ -173,7 +194,6 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	var uvs = PackedVector2Array()
 	var normals = PackedVector3Array()
 	var edges = PackedInt32Array()
-
 
 	verts = gen_verts()
 	#verts = PackedVector3Array([
@@ -205,7 +225,6 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	# 		Vector3.UP,
 	# 	])
 
-
 	edges = gen_edges()
 	#indices = PackedInt32Array([
 			#0, 2, 1,
@@ -219,13 +238,31 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	surface_array[Mesh.ARRAY_NORMAL] = normals
 	surface_array[Mesh.ARRAY_INDEX] = edges
 	
-
-	#print_debug("Vertex amount: %s" %verts.size())
-	#print_debug("Edges amount: %s" %edges.size())
+	chunk_mesh.mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surface_array)
+	chunk_mesh.set_surface_override_material(0, chunk_material)
 	
+	gen_collision()
 	
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surface_array)
+	add_child(chunk_mesh)
 	
-	set_surface_override_material(0, chunk_material)
-
+	## Create a VisibleOnScreenNotifier3D, to check if the object is in the scene.
+	var visibilityNotifier = VisibleOnScreenEnabler3D.new()
+	visibilityNotifier.aabb = AABB(Vector3(0,0,0), Vector3(chunk_size.height,0, chunk_size.width))
+	visibilityNotifier.screen_exited.connect(_invisible)
+	visibilityNotifier.screen_entered.connect(_visible)
+	
+	add_child(visibilityNotifier)
+	
 	pass # Replace with function body.
+
+
+
+func _visible():
+	print("Visible! %s" % name)
+	chunk_mesh.visible = true
+	pass
+	
+func _invisible():
+	print("Not Visible! %s" % name)
+	chunk_mesh.visible = false
+	pass

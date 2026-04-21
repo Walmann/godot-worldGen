@@ -1,61 +1,83 @@
 [gd_scene format=3 uid="uid://cki58bf1i25pd"]
 
-[ext_resource type="Script" uid="uid://n0pkfyhmlaou" path="res://camera.gd" id="1_28aoi"]
+[ext_resource type="Script" uid="uid://n0pkfyhmlaou" path="res://camera.gd" id="1_l8v81"]
 [ext_resource type="PackedScene" uid="uid://dpkuqdljvtxxr" path="res://WorldGen/SurfaceMesh/surface_generator.tscn" id="1_pq8q7"]
 [ext_resource type="Texture2D" uid="uid://csegm47q88hso" path="res://icon.svg" id="2_pyidc"]
 [ext_resource type="Script" uid="uid://b6378xqopwci1" path="res://onScreenButtons.gd" id="3_vvh5c"]
+[ext_resource type="PackedScene" uid="uid://cbnrr710ecnk6" path="res://WorldGen/WorldMap/world_map.tscn" id="5_jnlp7"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_vyht1"]
+
+[sub_resource type="Sky" id="Sky_bf3um"]
+sky_material = SubResource("ProceduralSkyMaterial_vyht1")
+
+[sub_resource type="Environment" id="Environment_huihk"]
+background_mode = 2
+sky = SubResource("Sky_bf3um")
 
 [sub_resource type="TextMesh" id="TextMesh_28aoi"]
 text = "⬆️"
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_28aoi"]
-
-[sub_resource type="Sky" id="Sky_jnlp7"]
-sky_material = SubResource("ProceduralSkyMaterial_28aoi")
-
-[sub_resource type="Environment" id="Environment_l8v81"]
-background_mode = 2
-sky = SubResource("Sky_jnlp7")
+[sub_resource type="BoxMesh" id="BoxMesh_28aoi"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_28aoi"]
-frequency = 512.0
-offset = Vector3(6169, 6169, 0)
+noise_type = 3
+frequency = 0.0073
+offset = Vector3(589, 589, 0)
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vvh5c"]
 width = 32
 height = 32
 noise = SubResource("FastNoiseLite_28aoi")
 
-[sub_resource type="BoxMesh" id="BoxMesh_28aoi"]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jnlp7"]
+
+[sub_resource type="Sky" id="Sky_l8v81"]
+sky_material = SubResource("ProceduralSkyMaterial_jnlp7")
+
+[sub_resource type="Environment" id="Environment_vyht1"]
+background_mode = 2
+sky = SubResource("Sky_l8v81")
 
 [node name="Root" type="Node3D" unique_id=1661414477]
+
+[node name="FreeLookCamera" type="Camera3D" parent="." unique_id=772184048]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.940596, 5.5698357, 3.0470943)
+environment = SubResource("Environment_huihk")
+current = true
+script = ExtResource("1_l8v81")
+metadata/_custom_type_script = "uid://n0pkfyhmlaou"
 
 [node name="DirectionArrow" type="MeshInstance3D" parent="." unique_id=509971406]
 transform = Transform3D(7.52, 0, 0, 0, -3.2870963e-07, -7.52, 0, 7.52, -3.2870963e-07, -1.0152687, 0, 2.4676015)
 mesh = SubResource("TextMesh_28aoi")
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=589035118]
-transform = Transform3D(-0.819152, 0, -0.5735764, 0, 1, 0, 0.5735764, 0, -0.819152, 0.6293547, 4.6388288, 2.0139904)
-environment = SubResource("Environment_l8v81")
-current = true
-script = ExtResource("1_28aoi")
+[node name="Cube 1Meter" type="MeshInstance3D" parent="." unique_id=1821108610]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
+mesh = SubResource("BoxMesh_28aoi")
 
 [node name="surfaceGenerator" parent="." unique_id=1643412213 instance=ExtResource("1_pq8q7")]
 surface_size = {
-"height": 200,
-"width": 200
+"height": 20,
+"width": 20
 }
 chunk_size = {
 "height": 32,
 "width": 32
 }
 sky_limit = 32
+enableLOD = null
+LOD_Level1 = null
+LOD_Level2 = null
+LOD_Level3 = null
 noisemap = SubResource("NoiseTexture2D_vvh5c")
 texture = ExtResource("2_pyidc")
 
 [node name="AspectRatioContainer" type="AspectRatioContainer" parent="." unique_id=1129930051]
+visible = false
 offset_right = 1150.0
 offset_bottom = 639.0
+ratio = 16.9
 alignment_horizontal = 0
 alignment_vertical = 0
 
@@ -63,46 +85,45 @@ alignment_vertical = 0
 layout_mode = 2
 script = ExtResource("3_vvh5c")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="AspectRatioContainer/Control" unique_id=622207345]
-visible = false
+[node name="SurfaceSettings" type="VBoxContainer" parent="AspectRatioContainer/Control" unique_id=622207345]
 layout_mode = 0
 offset_right = 375.0
 offset_bottom = 102.0
 
-[node name="Button" type="Button" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=722686582]
+[node name="Button" type="Button" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=722686582]
 layout_mode = 2
 text = "Start Surface generation"
 
-[node name="HSeparator" type="HSeparator" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=372528781]
+[node name="HSeparator" type="HSeparator" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=372528781]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="Noise Freq" type="VBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=759823351]
+[node name="Noise Freq" type="VBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=759823351]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Noise Freq" unique_id=1919875929]
+[node name="Label" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Noise Freq" unique_id=1919875929]
 layout_mode = 2
 text = "Noise Frequency"
 
-[node name="HSlider" type="HSlider" parent="AspectRatioContainer/Control/VBoxContainer/Noise Freq" unique_id=13255649]
+[node name="HSlider" type="HSlider" parent="AspectRatioContainer/Control/SurfaceSettings/Noise Freq" unique_id=13255649]
 layout_mode = 2
 max_value = 0.5
 step = 0.0
 allow_greater = true
 allow_lesser = true
 
-[node name="HSeparator4" type="HSeparator" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=1731528078]
+[node name="HSeparator4" type="HSeparator" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=1731528078]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="Sky height" type="VBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=964156939]
+[node name="Sky height" type="VBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=964156939]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Sky height" unique_id=1795249482]
+[node name="Label" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Sky height" unique_id=1795249482]
 layout_mode = 2
 text = "Sky Height"
 
-[node name="HSlider" type="HSlider" parent="AspectRatioContainer/Control/VBoxContainer/Sky height" unique_id=797014386]
+[node name="HSlider" type="HSlider" parent="AspectRatioContainer/Control/SurfaceSettings/Sky height" unique_id=797014386]
 layout_mode = 2
 max_value = 1000.0
 value = 512.0
@@ -112,122 +133,120 @@ allow_lesser = true
 tick_count = 10
 ticks_on_borders = true
 
-[node name="HSeparator2" type="HSeparator" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=1821282449]
+[node name="HSeparator2" type="HSeparator" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=1821282449]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="Surface Size" type="VBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=1360891312]
+[node name="Surface Size" type="VBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=1360891312]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size" unique_id=986790976]
+[node name="Label" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size" unique_id=986790976]
 layout_mode = 2
 text = "Surface Size"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size" unique_id=348475292]
+[node name="VBoxContainer" type="VBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size" unique_id=348475292]
 layout_mode = 2
 
-[node name="Height" type="HBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer" unique_id=399433551]
+[node name="Height" type="HBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer" unique_id=399433551]
 layout_mode = 2
 
-[node name="Height_text" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Height" unique_id=1975039765]
+[node name="Height_text" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer/Height" unique_id=1975039765]
 layout_mode = 2
 text = "Height"
 
-[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Height" unique_id=1843961242]
+[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer/Height" unique_id=1843961242]
 layout_mode = 2
 max_value = 10000.0
 rounded = true
 allow_greater = true
 
-[node name="Width" type="HBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer" unique_id=1335555454]
+[node name="Width" type="HBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer" unique_id=1335555454]
 layout_mode = 2
 
-[node name="Width_text" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Width" unique_id=855362183]
+[node name="Width_text" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer/Width" unique_id=855362183]
 layout_mode = 2
 text = "Width "
 
-[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Width" unique_id=1567511908]
+[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer/Width" unique_id=1567511908]
 layout_mode = 2
 max_value = 10000.0
 rounded = true
 allow_greater = true
 
-[node name="Both" type="HBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer" unique_id=924067555]
+[node name="Both" type="HBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer" unique_id=924067555]
 layout_mode = 2
 
-[node name="label_text" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Both" unique_id=1710703102]
+[node name="label_text" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer/Both" unique_id=1710703102]
 layout_mode = 2
 text = "Both   "
 
-[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Both" unique_id=238649656]
+[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/SurfaceSettings/Surface Size/VBoxContainer/Both" unique_id=238649656]
 layout_mode = 2
 max_value = 10000.0
 rounded = true
 allow_greater = true
 
-[node name="HSeparator3" type="HSeparator" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=310892575]
+[node name="HSeparator3" type="HSeparator" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=310892575]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="Chunk Size" type="VBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer" unique_id=1312006293]
+[node name="Chunk Size" type="VBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=1312006293]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size" unique_id=1607141560]
+[node name="Label" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size" unique_id=1607141560]
 layout_mode = 2
 text = "Chunk Size"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size" unique_id=1957486738]
+[node name="VBoxContainer" type="VBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size" unique_id=1957486738]
 layout_mode = 2
 
-[node name="Height" type="HBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer" unique_id=334348993]
+[node name="Height" type="HBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer" unique_id=334348993]
 layout_mode = 2
 
-[node name="Height_text" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Height" unique_id=1784662589]
+[node name="Height_text" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer/Height" unique_id=1784662589]
 layout_mode = 2
 text = "Height"
 
-[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Height" unique_id=2012258483]
+[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer/Height" unique_id=2012258483]
 layout_mode = 2
 max_value = 10000.0
 rounded = true
 allow_greater = true
 
-[node name="Width" type="HBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer" unique_id=967779590]
+[node name="Width" type="HBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer" unique_id=967779590]
 layout_mode = 2
 
-[node name="Width_text" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Width" unique_id=478044480]
+[node name="Width_text" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer/Width" unique_id=478044480]
 layout_mode = 2
 text = "Width "
 
-[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Width" unique_id=823808275]
+[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer/Width" unique_id=823808275]
 layout_mode = 2
 max_value = 10000.0
 rounded = true
 allow_greater = true
 
-[node name="Both" type="HBoxContainer" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer" unique_id=1548507570]
+[node name="Both" type="HBoxContainer" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer" unique_id=1548507570]
 layout_mode = 2
 
-[node name="label_text" type="Label" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Both" unique_id=208337830]
+[node name="label_text" type="Label" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer/Both" unique_id=208337830]
 layout_mode = 2
 text = "Both   "
 
-[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Both" unique_id=1138730071]
+[node name="SpinBox" type="SpinBox" parent="AspectRatioContainer/Control/SurfaceSettings/Chunk Size/VBoxContainer/Both" unique_id=1138730071]
 layout_mode = 2
 max_value = 10000.0
 rounded = true
 allow_greater = true
 
-[node name="Cube 1Meter" type="MeshInstance3D" parent="." unique_id=1821108610]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
-mesh = SubResource("BoxMesh_28aoi")
+[node name="WorldMap" parent="AspectRatioContainer/Control" unique_id=381499234 instance=ExtResource("5_jnlp7")]
+visible = false
+layout_mode = 1
 
-[connection signal="pressed" from="AspectRatioContainer/Control/VBoxContainer/Button" to="surfaceGenerator" method="_on_button_pressed_generate_surface"]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Noise Freq/HSlider" to="surfaceGenerator" method="_on_noise_freq_slider_value_changed"]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Sky height/HSlider" to="surfaceGenerator" method="_on_skyheight_slider_value_changed"]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Height/SpinBox" to="surfaceGenerator" method="_on_surface_size_slider_value_changed" binds= ["height"]]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Width/SpinBox" to="surfaceGenerator" method="_on_surface_size_slider_value_changed" binds= ["width"]]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Surface Size/VBoxContainer/Both/SpinBox" to="surfaceGenerator" method="_on_surface_size_slider_value_changed" binds= [" "]]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Height/SpinBox" to="surfaceGenerator" method="_on_chunk_size_slider_value_changed" binds= ["height"]]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Width/SpinBox" to="surfaceGenerator" method="_on_chunk_size_slider_value_changed" binds= ["width"]]
-[connection signal="value_changed" from="AspectRatioContainer/Control/VBoxContainer/Chunk Size/VBoxContainer/Both/SpinBox" to="surfaceGenerator" method="_on_chunk_size_slider_value_changed" binds= [" "]]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=357095220]
+environment = SubResource("Environment_vyht1")
+
+[connection signal="worldMapGenerated" from="surfaceGenerator" to="AspectRatioContainer/Control/WorldMap" method="_on_worldMapRecived"]
+[connection signal="pressed" from="AspectRatioContainer/Control/SurfaceSettings/Button" to="surfaceGenerator" method="_on_button_pressed_generate_surface"]
+[connection signal="value_changed" from="AspectRatioContainer/Control/SurfaceSettings/Noise Freq/HSlider" to="surfaceGenerator" method="_on_noise_freq_slider_value_changed"]
+[connection signal="value_changed" from="AspectRatioContainer/Control/SurfaceSettings/Sky height/HSlider" to="surfaceGenerator" method="_on_skyheight_slider_value_changed"]

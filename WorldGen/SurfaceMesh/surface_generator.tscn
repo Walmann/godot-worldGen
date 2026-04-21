@@ -2,5 +2,14 @@
 
 [ext_resource type="Script" uid="uid://bl2ksx1a1f1im" path="res://WorldGen/SurfaceMesh/surfaceGenerator.gd" id="1_3bp6f"]
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_4k5eg"]
+offset = Vector3(45, 45, 0)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_3bp6f"]
+width = 16
+height = 16
+noise = SubResource("FastNoiseLite_4k5eg")
+
 [node name="SurfaceGenerator" type="Node3D" unique_id=1584386603]
 script = ExtResource("1_3bp6f")
+noisemap = SubResource("NoiseTexture2D_3bp6f")

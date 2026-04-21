@@ -1,7 +1,11 @@
 @tool
 extends Node3D
 
+@export_tool_button("Generate Surface", "Callable") var generate_tool_button = generateSurface
+@export_tool_button("Delete Mesh", "Callable") var delete_mesh_tool_button = delete_mesh
 
+
+@export_group("Size")
 ## The size of the world. Units are in number of chunks in each direction
 @export var surface_size: Dictionary = {"height": 4, "width": 4}
 ## Size of chunk. Amount is in "Triangles in a row". Currently thinking in meters works. 
@@ -9,20 +13,34 @@ extends Node3D
 ## The height of the map. The noisemap is normalized, so the highest point will always be this tall
 @export var sky_limit: int = 512
 
+
+@export_group("Optimization")
+@export_subgroup("Level of detail")
+@export var enableLOD = true
+@export var LOD_Level1 = 10
+@export var LOD_Level2 = 100
+@export var LOD_Level3 = 1000
+
+
+@export_group("Noise and textures")
 @export var noisemap: NoiseTexture2D
 @export var texture: Texture2D
 
+## Game objects, such as the player
+@export_group("Game objects")
+@export var curr_cam: Node3D
 
 
-@export_tool_button("Generate Surface", "Callable") var generate_tool_button = generateSurface
-@export_tool_button("Delete Mesh", "Callable") var delete_mesh_tool_button = delete_mesh
 
+
+
+signal worldMapGenerated(image: Image)
 #var chunkRegistry: Vector2i = Vector
 
 # Called when the node enters the scene tree for the first time.
-#func _ready() -> void:
-	#generateSurface()
-	#pass # Replace with function body.
+func _ready() -> void:
+	generateSurface()
+	pass # Replace with function body.
 
 func delete_mesh():
 	for child in get_children():
@@ -49,13 +67,19 @@ func _get_material_texture():
 	return mat
 	
 
-	
+func _generateWorldMap() -> Image:
+	var n = noisemap.noise.get_image(chunk_size.width*surface_size.width, chunk_size.width*surface_size.width)
+	worldMapGenerated.emit(n)
+	return n
+
+
+
 func generateSurface():
 	# First remove mesh, if already exists
 	delete_mesh()
 	 #Generate noisemap: 
 	_generate_noise()
-	
+	_generateWorldMap()
 	
 	for curr_height in surface_size.height:
 		for curr_width in surface_size.width:
@@ -71,14 +95,18 @@ func generateSurface():
 			var curr_noise = noisemap
 			curr_noise.noise.set_offset(Vector3(chunk_position.x,chunk_position.z,0))
 			
-			chunk.generateChunk(curr_noise, _get_material_texture(), sky_limit, chunk_size)
+			## Set LOD of chunk
+			#curr_cam = get_viewport().get_camera_3d().position
+			#if chunk_position.distance_to(curr_cam) <= LOD_level:
+				#
+				#pass
+				
+			# Generate chunk
+			chunk.generateChunk(curr_noise, _get_material_texture(), sky_limit, chunk_size, 1)
 			
+			# Spawn and Move Chunk into place
 			add_child(chunk)
-			
-			# Move Chunk into place
 			chunk.position += chunk_position
-			#chunk.position += _calculate_chunk_position(chunk.transform.origin)
-			
 			pass
 	pass
 
@@ -119,7 +147,7 @@ func _on_chunk_size_slider_value_changed(value: float, dir: String) -> void:
 	pass # Replace with function body.
 
 
-func _on_skyheight_slider_value_changed(value: float) -> void:
+func _on_skyheight_slider_value_changed(value: int) -> void:
 	sky_limit = value
 	generateSurface()
 	pass # Replace with function body.
