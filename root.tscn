@@ -23,7 +23,7 @@ text = "⬆️"
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_28aoi"]
 noise_type = 3
 frequency = 0.0073
-offset = Vector3(589, 589, 0)
+offset = Vector3(465, 465, 0)
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vvh5c"]
 width = 32
@@ -42,7 +42,7 @@ sky = SubResource("Sky_l8v81")
 [node name="Root" type="Node3D" unique_id=1661414477]
 
 [node name="FreeLookCamera" type="Camera3D" parent="." unique_id=772184048]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.940596, 5.5698357, 3.0470943)
+transform = Transform3D(-0.6402974, 0, -0.7681271, 0, 1, 0, 0.7681271, 0, -0.6402974, 3.940596, 5.5698357, 3.0470943)
 environment = SubResource("Environment_huihk")
 current = true
 script = ExtResource("1_l8v81")
@@ -57,19 +57,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
 mesh = SubResource("BoxMesh_28aoi")
 
 [node name="surfaceGenerator" parent="." unique_id=1643412213 instance=ExtResource("1_pq8q7")]
-surface_size = {
-"height": 20,
-"width": 20
-}
-chunk_size = {
-"height": 32,
-"width": 32
-}
 sky_limit = 32
-enableLOD = null
-LOD_Level1 = null
-LOD_Level2 = null
-LOD_Level3 = null
+LOD_setting1_distance = 10.0
+LOD_setting2_distance = 30.0
 noisemap = SubResource("NoiseTexture2D_vvh5c")
 texture = ExtResource("2_pyidc")
 
@@ -87,14 +77,18 @@ script = ExtResource("3_vvh5c")
 
 [node name="SurfaceSettings" type="VBoxContainer" parent="AspectRatioContainer/Control" unique_id=622207345]
 layout_mode = 0
-offset_right = 375.0
-offset_bottom = 102.0
+offset_right = 230.0
+offset_bottom = 544.0
 
-[node name="Button" type="Button" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=722686582]
+[node name="Surface Generation" type="Button" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=722686582]
 layout_mode = 2
 text = "Start Surface generation"
 
-[node name="HSeparator" type="HSeparator" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=372528781]
+[node name="Toggle LOD" type="Button" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=1634495879]
+layout_mode = 2
+text = "Toggle surface LOD"
+
+[node name="HSeparator5" type="HSeparator" parent="AspectRatioContainer/Control/SurfaceSettings" unique_id=1394415334]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
@@ -247,6 +241,7 @@ layout_mode = 1
 environment = SubResource("Environment_vyht1")
 
 [connection signal="worldMapGenerated" from="surfaceGenerator" to="AspectRatioContainer/Control/WorldMap" method="_on_worldMapRecived"]
-[connection signal="pressed" from="AspectRatioContainer/Control/SurfaceSettings/Button" to="surfaceGenerator" method="_on_button_pressed_generate_surface"]
+[connection signal="pressed" from="AspectRatioContainer/Control/SurfaceSettings/Surface Generation" to="surfaceGenerator" method="_on_button_pressed_generate_surface"]
+[connection signal="pressed" from="AspectRatioContainer/Control/SurfaceSettings/Toggle LOD" to="surfaceGenerator" method="_on_LODEnabler_changes"]
 [connection signal="value_changed" from="AspectRatioContainer/Control/SurfaceSettings/Noise Freq/HSlider" to="surfaceGenerator" method="_on_noise_freq_slider_value_changed"]
 [connection signal="value_changed" from="AspectRatioContainer/Control/SurfaceSettings/Sky height/HSlider" to="surfaceGenerator" method="_on_skyheight_slider_value_changed"]

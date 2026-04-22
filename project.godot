@@ -15,9 +15,17 @@ run/main_scene="res://root.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+DebugMenu="*uid://cggqb75a8w8r"
+
+[display]
+
+window/vsync/vsync_mode=0
+
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/sk_fly_camera/plugin.cfg")
+enabled=PackedStringArray("res://addons/debug_menu/plugin.cfg", "res://addons/sk_fly_camera/plugin.cfg")
 
 [physics]
 
