@@ -7,19 +7,38 @@ extends Node3D
 
 @export_group("Size")
 ## The size of the world. Units are in number of chunks in each direction
-@export var surface_size: Dictionary = {"height": 4, "width": 4}
+@export var surface_size: Dictionary = {"height": 16, "width": 16}
 ## Size of chunk. Amount is in "Triangles in a row". Currently thinking in meters works. 
-@export var chunk_size: Dictionary = {"height": 16, "width": 16}
+@export var chunk_size: Dictionary = {"height": 32, "width": 32}
 ## The height of the map. The noisemap is normalized, so the highest point will always be this tall
 @export var sky_limit: int = 512
 
 
 @export_group("Optimization")
 @export_subgroup("Level of detail")
-@export var enableLOD = true
-@export var LOD_Level1 = 10
-@export var LOD_Level2 = 100
-@export var LOD_Level3 = 1000
+@export var enableLOD: bool = true: 
+	get:
+		return enableLOD
+	set(value): 
+		enableLOD = value
+		generateSurface()
+		
+		
+@export_subgroup("LOD setting 1")
+@export var LOD_setting1_distance:  float = 20
+## Percantage reduction
+@export var LOD_setting1_reduction: float = 1
+
+@export_subgroup("LOD setting 2")
+@export var LOD_setting2_distance:  float = 50
+## Percantage reduction
+@export var LOD_setting2_reduction: float = 0.5
+
+@export_subgroup("LOD setting 3")
+@export var LOD_setting3_distance:  float = 100
+## Percantage reduction
+@export var LOD_setting3_reduction: float = 0.25
+
 
 
 @export_group("Noise and textures")
@@ -35,11 +54,18 @@ extends Node3D
 
 
 signal worldMapGenerated(image: Image)
+
+
+
 #var chunkRegistry: Vector2i = Vector
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	generateSurface()
+	# Stop generating terrain when starting editor
+	if Engine.is_editor_hint():
+		return 
+	else: 
+		generateSurface()
 	pass # Replace with function body.
 
 func delete_mesh():
@@ -73,13 +99,47 @@ func _generateWorldMap() -> Image:
 	return n
 
 
-
+func _calculate_LOD(chunk_position: Vector3):
+	if !enableLOD:
+		return 1
+	
+	var LOD_level: float = LOD_setting3_distance
+	var curr_cam = get_viewport().get_camera_3d().position
+	var curr_dist: float = chunk_position.distance_to(curr_cam)
+	
+	
+	if curr_dist   >= LOD_setting3_distance:
+		LOD_level = LOD_setting3_reduction
+	
+	elif curr_dist >= LOD_setting2_distance:
+		LOD_level = LOD_setting2_reduction
+	
+	elif curr_dist >= LOD_setting1_distance:
+		LOD_level = LOD_setting1_reduction
+	
+	else: 
+		LOD_level = 1 # Full quality
+		pass
+	
+	if LOD_level == 0:
+		# Only for Debugging. 
+		pass
+		
+	return LOD_level
+	
+	
+	
 func generateSurface():
 	# First remove mesh, if already exists
 	delete_mesh()
-	 #Generate noisemap: 
+	
+	#Generate noisemap: 
 	_generate_noise()
+	
+	
 	_generateWorldMap()
+	
+	
 	
 	for curr_height in surface_size.height:
 		for curr_width in surface_size.width:
@@ -88,25 +148,26 @@ func generateSurface():
 			var chunkID = Vector2i(curr_height, curr_width)
 			chunk.name = str(chunkID)
 			
+			
 			#Calculate position of chunk. Use this to get seamles transition to other chunks
-			var chunk_position = Vector3((chunk_size.width -1) * curr_width,0,(chunk_size.height - 1) * curr_height)
+			var chunk_position = Vector3((chunk_size.width) * curr_width,0,(chunk_size.height) * curr_height)
+			
+			# Spawn and Move Chunk into place
+			add_child(chunk)
+			chunk.position += chunk_position
+			
 			
 			# Get noise for current chunk
 			var curr_noise = noisemap
 			curr_noise.noise.set_offset(Vector3(chunk_position.x,chunk_position.z,0))
 			
 			## Set LOD of chunk
-			#curr_cam = get_viewport().get_camera_3d().position
-			#if chunk_position.distance_to(curr_cam) <= LOD_level:
-				#
-				#pass
-				
-			# Generate chunk
-			chunk.generateChunk(curr_noise, _get_material_texture(), sky_limit, chunk_size, 1)
+			var LOD_level = _calculate_LOD(chunk_position)
 			
-			# Spawn and Move Chunk into place
-			add_child(chunk)
-			chunk.position += chunk_position
+			# Generate chunk
+			chunk.generateChunk(curr_noise, _get_material_texture(), sky_limit, chunk_size, LOD_level)
+			
+
 			pass
 	pass
 
@@ -151,3 +212,7 @@ func _on_skyheight_slider_value_changed(value: int) -> void:
 	sky_limit = value
 	generateSurface()
 	pass # Replace with function body.
+
+
+func _on_LODEnabler_changes() -> void:
+	enableLOD = !enableLOD

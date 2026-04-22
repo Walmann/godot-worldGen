@@ -18,8 +18,9 @@ var chunk_skylimit: int
 
 
 ## The amount to divide chunk_size with. This is to control LOD levels. 
-var chunk_LOD_Level: int
-
+var chunk_LOD_Level: float
+var chunk_LOD_width: float
+var chunk_LOD_height: float
 
 #func _ready() -> void:
 	#generateChunk()
@@ -44,20 +45,35 @@ func gen_verts() -> PackedVector3Array:
 	# Vector3(0, 0, 1), #1
 	# Vector3(1, 0, 0), #2
 	# Vector3(1, 0, 1), #3
-
 	# Vector3(2, 0, 0), #4
 	# Vector3(2, 0, 1), #5
 	# ])
 
-
 	var verts = PackedVector3Array()
+	
+	#var chunk_LOD_width  = chunk_size.width  * chunk_LOD_Level
+	#var chunk_LOD_height = round(chunk_size.height * chunk_LOD_Level)
+	
+	var chunk_width_min  = 0
+	var chunk_width_max  = chunk_size.width
+	
+	var chunk_height_min  = 0
+	var chunk_height_max  = chunk_size.height
 
-	for height in chunk_size.height:
-		for width in chunk_size.width:
-			verts.append(Vector3(width, get_noise_height(Vector2i(width, height)), height))
+	
+	for height in chunk_LOD_height:
+		var height_step: float = float(height) / float(chunk_LOD_height - 1)
+		var next_pos_height = chunk_height_min + height_step * (chunk_height_max - chunk_height_min)
+		for width in chunk_LOD_width:
+			var width_step: float = float(width) / float(chunk_LOD_width - 1)
+			var next_pos_width = chunk_width_min + width_step * (chunk_width_max - chunk_width_min)
+			verts.append(Vector3(next_pos_width, get_noise_height(Vector2i(next_pos_width, next_pos_height)), next_pos_height))
+		pass
 	pass
 
-
+	#debug1 = debug1 + 1
+	#if verts.is_empty():
+		#pass
 	return verts
 
 func gen_uvs(verts) -> PackedVector2Array:
@@ -101,19 +117,19 @@ func gen_edges() -> PackedInt32Array:
 	var edges = PackedInt32Array()
 
 	# This generates triangles
-	for curr_height in range(chunk_size.height - 1): # X = Vertical, is Z in Vector
-		for curr_width in range(chunk_size.width - 1): # Y = Horizontal, is Z in Vector
-			var curr_triangle = curr_height * chunk_size.width + curr_width
+	for curr_height in range(chunk_LOD_height - 1): # X = Vertical, is Z in Vector
+		for curr_width in range(chunk_LOD_width - 1): # Y = Horizontal, is Z in Vector
+			var curr_triangle = curr_height * chunk_LOD_width + curr_width
 			var edge1 = curr_triangle
 			var edge2 = curr_triangle + 1
-			var edge3 = curr_triangle + chunk_size.width
+			var edge3 = curr_triangle + chunk_LOD_width
 			
 			var edge4 = edge2
-			var edge5 = edge4 + chunk_size.width
+			var edge5 = edge4 + chunk_LOD_width
 			var edge6 = edge3
 			
 			curr_triangle +=1
-			if curr_width == chunk_size.width -1:
+			if curr_width == chunk_LOD_width -1:
 				continue
 			
 			
@@ -174,7 +190,9 @@ func gen_collision():
 	add_child(curr_staticBody)
 	pass
 
-func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, skylimit: int, Chunk_size: Dictionary, LOD_level: int):
+
+var debug1 = 0
+func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, skylimit: int, Chunk_size: Dictionary, LOD_level: float):
 	
 	chunk_noisemap = Noisemap
 	chunk_material = c_material
@@ -182,20 +200,24 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	chunk_skylimit = skylimit		
 	chunk_LOD_Level = LOD_level
 	
-	chunk_mesh = MeshInstance3D.new()
+	#if chunk_LOD_Level == 0:
+		#pass
+		
 	
+	# Calculate new chunk size with applied LOD
+	chunk_LOD_width  = chunk_size.width  * chunk_LOD_Level
+	chunk_LOD_height = chunk_size.height * chunk_LOD_Level
+	
+	
+	#print(chunk_size)
+	chunk_mesh = MeshInstance3D.new()
 	# Generate surface Mesh
 	chunk_mesh.mesh = ArrayMesh.new()
 
 	var surface_array = []
 	surface_array.resize(Mesh.ARRAY_MAX)
-	
-	var verts = PackedVector3Array()
-	var uvs = PackedVector2Array()
-	var normals = PackedVector3Array()
-	var edges = PackedInt32Array()
 
-	verts = gen_verts()
+	var verts: PackedVector3Array = gen_verts()
 	#verts = PackedVector3Array([
 	 	#Vector3(0, 0, 0), #0
 	 	#Vector3(0, 0, 1), #1
@@ -205,7 +227,8 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	 	#Vector3(2, 0, 1), #5
 	 #])
 	
-	uvs = gen_uvs(verts)
+	
+	var uvs: PackedVector2Array = gen_uvs(verts)
 	# uvs = PackedVector2Array([
 	# 		Vector2(0, 0),
 	# 		Vector2(1, 0),
@@ -215,7 +238,7 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	# 		Vector2(1, 0.5),
 	# 	])
 
-	normals = gen_normals(uvs)
+	var normals: PackedVector3Array = gen_normals(uvs)
 	# normals = PackedVector3Array([
 	# 		Vector3.UP,
 	# 		Vector3.UP,
@@ -225,7 +248,7 @@ func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, sky
 	# 		Vector3.UP,
 	# 	])
 
-	edges = gen_edges()
+	var edges: PackedInt32Array = gen_edges()
 	#indices = PackedInt32Array([
 			#0, 2, 1,
 			#2, 3, 1,
