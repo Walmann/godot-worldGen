@@ -15,6 +15,8 @@ extends Node3D
 
 
 @export_group("Optimization")
+@export_subgroup("Surface generation")
+@export var thread_number: int = 10
 @export_subgroup("Level of detail")
 @export var enableLOD: bool = true: 
 	get:
@@ -23,21 +25,6 @@ extends Node3D
 		enableLOD = value
 		generateSurface()
 		
-		
-@export_subgroup("LOD setting 1")
-@export var LOD_setting1_distance:  float = 20
-## Percantage reduction
-@export var LOD_setting1_reduction: float = 1
-
-@export_subgroup("LOD setting 2")
-@export var LOD_setting2_distance:  float = 50
-## Percantage reduction
-@export var LOD_setting2_reduction: float = 0.5
-
-@export_subgroup("LOD setting 3")
-@export var LOD_setting3_distance:  float = 100
-## Percantage reduction
-@export var LOD_setting3_reduction: float = 0.25
 
 
 
@@ -45,12 +32,12 @@ extends Node3D
 @export var noisemap: NoiseTexture2D
 @export var texture: Texture2D
 
-## Game objects, such as the player
-@export_group("Game objects")
-@export var curr_cam: Node3D
+### Game objects, such as the player
+#@export_group("Game objects")
+#@export var curr_cam: Node3D
 
 
-
+#var curr_cam: Vector3 
 
 
 signal worldMapGenerated(image: Image)
@@ -73,6 +60,7 @@ func delete_mesh():
 		child.free()
 	pass
 
+## Creates the noise (Woop!  Woop!) for the whole world. 
 func _generate_noise():
 	if noisemap == null:
 		noisemap = NoiseTexture2D.new()
@@ -84,104 +72,90 @@ func _generate_noise():
 		noisemap.noise = FastNoiseLite.new()
 
 	return noisemap
-	
 
 func _get_material_texture():
 	var mat = StandardMaterial3D.new()
 	mat.albedo_texture = texture
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return mat
-	
 
 func _generateWorldMap() -> Image:
 	var n = noisemap.noise.get_image(chunk_size.width*surface_size.width, chunk_size.width*surface_size.width)
 	worldMapGenerated.emit(n)
 	return n
 
-
-func _calculate_LOD(chunk_position: Vector3):
-	if !enableLOD:
-		return 1
 	
-	var LOD_level: float = LOD_setting3_distance
-	var curr_cam = get_viewport().get_camera_3d().position
-	var curr_dist: float = chunk_position.distance_to(curr_cam)
-	
-	
-	if curr_dist   >= LOD_setting3_distance:
-		LOD_level = LOD_setting3_reduction
-	
-	elif curr_dist >= LOD_setting2_distance:
-		LOD_level = LOD_setting2_reduction
-	
-	elif curr_dist >= LOD_setting1_distance:
-		LOD_level = LOD_setting1_reduction
-	
-	else: 
-		LOD_level = 1 # Full quality
-		pass
-	
-	if LOD_level == 0:
-		# Only for Debugging. 
-		pass
-		
-	return LOD_level
+func _create_new_chunk(curr_size: Vector2i, distance_to_player: Vector3):
+	var curr_height = curr_size.x
+	var curr_width  = curr_size.y
+	#var chunk_location = _calculate_chunk_position(Vector2i(curr_width, curr_height))
+	var chunk = SurfaceChunk.new()
+	var chunkID = Vector2i(curr_height, curr_width)
+	chunk.name = str(chunkID)
 	
 	
+	#Calculate position of chunk. Use this to get seamles transition to other chunks
+	var chunk_position = Vector3((chunk_size.width) * curr_width,0,(chunk_size.height) * curr_height)
+	
+	# Spawn and Move Chunk into place
+	call_deferred("add_child", chunk)
+	chunk.position += chunk_position
+	
+	
+	# Get noise for current chunk
+	var curr_noise = noisemap.duplicate(true)
+	curr_noise.noise.set_offset(Vector3(chunk_position.x,chunk_position.z,0))
+	
+	# Generate chunk
+	chunk.generateChunk(curr_noise, _get_material_texture(), sky_limit, chunk_size, distance_to_player, chunk_position)
+			
+	pass
 	
 func generateSurface():
+	var camera_pos = get_viewport().get_camera_3d().position
 	# First remove mesh, if already exists
 	delete_mesh()
-	
-	#Generate noisemap: 
+	## Generate noisemap for whole surface: 
 	_generate_noise()
-	
 	
 	_generateWorldMap()
 	
+	# Create surface with threaded work
+	var dispatch_queue = DispatchQueue.new()
+	var timeStart = Time.get_ticks_msec()
+	dispatch_queue.create_concurrent(thread_number)
 	
-	
+	var threads_number_of_jobs = 0
+	var threads_used = 0
 	for curr_height in surface_size.height:
 		for curr_width in surface_size.width:
-			#var chunk_location = _calculate_chunk_position(Vector2i(curr_width, curr_height))
-			var chunk = SurfaceChunk.new()
-			var chunkID = Vector2i(curr_height, curr_width)
-			chunk.name = str(chunkID)
+			dispatch_queue.dispatch(_create_new_chunk.bind(Vector2(curr_height, curr_width), camera_pos))
 			
-			
-			#Calculate position of chunk. Use this to get seamles transition to other chunks
-			var chunk_position = Vector3((chunk_size.width) * curr_width,0,(chunk_size.height) * curr_height)
-			
-			# Spawn and Move Chunk into place
-			add_child(chunk)
-			chunk.position += chunk_position
-			
-			
-			# Get noise for current chunk
-			var curr_noise = noisemap
-			curr_noise.noise.set_offset(Vector3(chunk_position.x,chunk_position.z,0))
-			
-			## Set LOD of chunk
-			var LOD_level = _calculate_LOD(chunk_position)
-			
-			# Generate chunk
-			chunk.generateChunk(curr_noise, _get_material_texture(), sky_limit, chunk_size, LOD_level)
-			
+			## This is purely for performance checks: 
+			threads_number_of_jobs = threads_number_of_jobs +1
+			var t = dispatch_queue.get_thread_count()
+			if t >= threads_used:
+				threads_used= t
+	
+	
+	await dispatch_queue.all_tasks_finished
+	var time_used = func():
+		var t = Time.get_ticks_msec() - timeStart
+		return str("%s seconds (%s milliseconds)" % [t*0.001, t])
 
-			pass
-	pass
+	print("Surface created! Creation time: %s generating a %sm by %sm surface. We used %s threads on %s jobs" % [time_used.call(), chunk_size.height * surface_size.height, chunk_size.width * surface_size.width, threads_used, threads_number_of_jobs])
 
 
 func _on_button_pressed_generate_surface() -> void:
 	print("Trying to generate surface.")
 	generateSurface()
-	pass # Replace with function body.
+	pass 
 
 
 func _on_noise_freq_slider_value_changed(value: float) -> void:
 	noisemap.noise.set_frequency(value)
 	generateSurface()
-	pass # Replace with function body.
+	pass 
 
 
 func _on_surface_size_slider_value_changed(value: float, dir: String) -> void:

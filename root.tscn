@@ -22,8 +22,13 @@ text = "⬆️"
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_28aoi"]
 noise_type = 3
-frequency = 0.0073
+frequency = 0.0005
 offset = Vector3(465, 465, 0)
+fractal_octaves = 10
+fractal_lacunarity = 2.135
+fractal_gain = 0.4
+domain_warp_enabled = true
+domain_warp_type = 2
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vvh5c"]
 width = 32
@@ -57,9 +62,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
 mesh = SubResource("BoxMesh_28aoi")
 
 [node name="surfaceGenerator" parent="." unique_id=1643412213 instance=ExtResource("1_pq8q7")]
-sky_limit = 32
-LOD_setting1_distance = 10.0
-LOD_setting2_distance = 30.0
+surface_size = {
+"height": 100,
+"width": 100
+}
+chunk_size = {
+"height": 10,
+"width": 10
+}
+sky_limit = 128
 noisemap = SubResource("NoiseTexture2D_vvh5c")
 texture = ExtResource("2_pyidc")
 

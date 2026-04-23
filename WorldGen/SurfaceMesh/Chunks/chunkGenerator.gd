@@ -3,7 +3,7 @@ class_name SurfaceChunk
 extends Node3D
 
 
-#@export var chunk_size: Dictionary = {"height": 512, "width": 512, "upwards": 512}
+#@export var _chunk_size: Dictionary = {"height": 512, "width": 512, "upwards": 512}
 #@export var noisemap: NoiseTexture2D
 #@export var texture: Texture2D
 #
@@ -11,26 +11,65 @@ extends Node3D
 
 
 var chunk_mesh: MeshInstance3D
-var chunk_noisemap: NoiseTexture2D
-var chunk_material: StandardMaterial3D
-var chunk_size: Dictionary
-var chunk_skylimit: int
+var _chunk_noisemap: NoiseTexture2D
+var _chunk_material: StandardMaterial3D
+var _chunk_size: Dictionary
+var _chunk_skylimit: int
+var _camera_pos: Vector3
+var _chunk_position: Vector3
+var _chunk_created: bool = false
 
-
-## The amount to divide chunk_size with. This is to control LOD levels. 
-var chunk_LOD_Level: float
+## The amount to divide _chunk_size with. This is to control LOD levels. 
+var _chunk_LOD_Level: float
 var chunk_LOD_width: float
 var chunk_LOD_height: float
 
-#func _ready() -> void:
-	#generateChunk()
-	#
 
+
+var LOD_level: float = LOD_setting4_distance:
+	get:
+		return LOD_level
+	set(value): 
+		LOD_level = value
+		if _chunk_created:
+			_generate()
+		
+@export_subgroup("LOD setting 1")
+@export var LOD_setting1_distance:  float = 20
+## Percantage reduction
+@export var LOD_setting1_reduction: float = 1
+
+@export_subgroup("LOD setting 2")
+@export var LOD_setting2_distance:  float = 50
+## Percantage reduction
+@export var LOD_setting2_reduction: float = 0.5
+
+@export_subgroup("LOD setting 3")
+@export var LOD_setting3_distance:  float = 100
+## Percantage reduction
+@export var LOD_setting3_reduction: float = 0.25
+
+@export_subgroup("LOD setting 4")
+@export var LOD_setting4_distance:  float = 200
+## Percantage reduction
+@export var LOD_setting4_reduction: float = 0.1
+
+
+@export_group("Debug variables")
+@export var distance_to_camera: float
+@export var enable_LOD: bool = true
+
+@export_subgroup("Performance (milliseconds)")
+@export var _perf_timer_generate: = 0
+@export var _perf_timer_verts: = 0
+@export var _perf_timer_uvs: = 0
+@export var _perf_timer_normals: = 0
+@export var _perf_timer_edges: = 0
 
 
 
 func get_noise_height(cords: Vector2i):
-	var data: float = chunk_noisemap.noise.get_noise_2dv(cords) * chunk_skylimit
+	var data: float = _chunk_noisemap.noise.get_noise_2dv(cords) * _chunk_skylimit
 	
 	# This is for debugging. Creates a flat map
 	#var data: float = 0.0
@@ -51,14 +90,14 @@ func gen_verts() -> PackedVector3Array:
 
 	var verts = PackedVector3Array()
 	
-	#var chunk_LOD_width  = chunk_size.width  * chunk_LOD_Level
-	#var chunk_LOD_height = round(chunk_size.height * chunk_LOD_Level)
+	#var chunk_LOD_width  = _chunk_size.width  * _chunk_LOD_Level
+	#var chunk_LOD_height = round(_chunk_size.height * _chunk_LOD_Level)
 	
 	var chunk_width_min  = 0
-	var chunk_width_max  = chunk_size.width
+	var chunk_width_max  = _chunk_size.width
 	
 	var chunk_height_min  = 0
-	var chunk_height_max  = chunk_size.height
+	var chunk_height_max  = _chunk_size.height
 
 	
 	for height in chunk_LOD_height:
@@ -135,7 +174,7 @@ func gen_edges() -> PackedInt32Array:
 			
 			if false: #enable for debug text about edging. 
 				print_debug("Current Tirangle: %s" % curr_triangle)
-				print_debug("chunk_size.width: %s" % chunk_size.width)
+				print_debug("_chunk_size.width: %s" % _chunk_size.width)
 				print_debug("Height: %s" % curr_height)
 				print_debug("Width: %s" % curr_width)
 				print_debug("###")
@@ -187,105 +226,128 @@ func gen_collision():
 	var curr_staticBody = StaticBody3D.new()
 	curr_staticBody.add_child(curr_coll)
 	
-	add_child(curr_staticBody)
+	await call_deferred("add_child", curr_staticBody)
 	pass
 
 
-var debug1 = 0
-func generateChunk(Noisemap: NoiseTexture2D, c_material: StandardMaterial3D, skylimit: int, Chunk_size: Dictionary, LOD_level: float):
+func _calculate_LOD(chunk_position: Vector3):
+	if !enable_LOD:
+		return 1.0
+	return LOD_setting4_reduction
+	#var curr_cam = get_viewport().get_camera_3d().position
+	var curr_dist: float = chunk_position.distance_to(_camera_pos)
+	distance_to_camera = curr_dist
 	
-	chunk_noisemap = Noisemap
-	chunk_material = c_material
-	chunk_size     = Chunk_size
-	chunk_skylimit = skylimit		
-	chunk_LOD_Level = LOD_level
-	
-	#if chunk_LOD_Level == 0:
-		#pass
+	if curr_dist   >= LOD_setting4_distance:
+		LOD_level = LOD_setting4_reduction	
 		
+	elif curr_dist   >= LOD_setting3_distance:
+		LOD_level = LOD_setting3_reduction
 	
+	elif curr_dist >= LOD_setting2_distance:
+		LOD_level = LOD_setting2_reduction
+	
+	elif curr_dist >= LOD_setting1_distance:
+		LOD_level = LOD_setting1_reduction
+	
+	else: 
+		LOD_level = 1 # Full quality
+		pass
+	
+	if LOD_level == 0:
+		# Only for Debugging. 
+		pass
+		
+	return LOD_level
+
+var debug1 = 0
+
+func generateChunk(Noisemap: NoiseTexture2D, chunk_material: StandardMaterial3D, skylimit: int, chunk_size: Dictionary, camera_pos: Vector3, chunk_position: Vector3):
+	
+	_chunk_noisemap = Noisemap
+	_chunk_material = chunk_material
+	_chunk_size     = chunk_size
+	_chunk_skylimit = skylimit		
+	_chunk_position = chunk_position
+	_camera_pos = camera_pos
+	_chunk_LOD_Level = _calculate_LOD(_chunk_position)
+	
+	_generate()
+	_chunk_created = true
+	
+func _generate():	
+	var _perfTimer_generate_start = Time.get_ticks_msec()
 	# Calculate new chunk size with applied LOD
-	chunk_LOD_width  = chunk_size.width  * chunk_LOD_Level
-	chunk_LOD_height = chunk_size.height * chunk_LOD_Level
+	chunk_LOD_width  = round(_chunk_size.width  * _chunk_LOD_Level)
+	chunk_LOD_height = round(_chunk_size.height * _chunk_LOD_Level)
+	
+	if chunk_LOD_width <= 2:
+		chunk_LOD_width = 2
+	if chunk_LOD_height <= 2:
+		chunk_LOD_height = 2
 	
 	
-	#print(chunk_size)
+	#print(_chunk_size)
 	chunk_mesh = MeshInstance3D.new()
 	# Generate surface Mesh
 	chunk_mesh.mesh = ArrayMesh.new()
 
 	var surface_array = []
 	surface_array.resize(Mesh.ARRAY_MAX)
-
+	
+	var _perfTimer_verts_start = Time.get_ticks_msec()
 	var verts: PackedVector3Array = gen_verts()
-	#verts = PackedVector3Array([
-	 	#Vector3(0, 0, 0), #0
-	 	#Vector3(0, 0, 1), #1
-	 	#Vector3(1, 0, 0), #2
-	 	#Vector3(1, 0, 1), #3
-	 	#Vector3(2, 0, 0), #4
-	 	#Vector3(2, 0, 1), #5
-	 #])
+	_perf_timer_verts = Time.get_ticks_msec() - _perfTimer_verts_start
+
 	
-	
+	var _perfTimer_uvs_start = Time.get_ticks_msec()	
 	var uvs: PackedVector2Array = gen_uvs(verts)
-	# uvs = PackedVector2Array([
-	# 		Vector2(0, 0),
-	# 		Vector2(1, 0),
-	# 		Vector2(0, 1),
-	# 		Vector2(1, 1),
-	# 		Vector2(0.5, 0.5),
-	# 		Vector2(1, 0.5),
-	# 	])
-
+	_perf_timer_uvs = Time.get_ticks_msec() - _perfTimer_uvs_start
+	
+	
+	var _perfTimer_normals_start = Time.get_ticks_msec()
 	var normals: PackedVector3Array = gen_normals(uvs)
-	# normals = PackedVector3Array([
-	# 		Vector3.UP,
-	# 		Vector3.UP,
-	# 		Vector3.UP,
-	# 		Vector3.UP,
-	# 		Vector3.UP,
-	# 		Vector3.UP,
-	# 	])
-
+	_perf_timer_normals = Time.get_ticks_msec() - _perfTimer_normals_start
+	
+	
+	var _perfTimer_edges_start = Time.get_ticks_msec()
 	var edges: PackedInt32Array = gen_edges()
-	#indices = PackedInt32Array([
-			#0, 2, 1,
-			#2, 3, 1,
-			#2, 4, 3,
-			#4, 5, 3,
-		#])
-
+	_perf_timer_edges = Time.get_ticks_msec() - _perfTimer_edges_start
+	
+	
 	surface_array[Mesh.ARRAY_VERTEX] = verts
 	surface_array[Mesh.ARRAY_TEX_UV] = uvs
 	surface_array[Mesh.ARRAY_NORMAL] = normals
 	surface_array[Mesh.ARRAY_INDEX] = edges
 	
+	if edges.is_empty():
+		pass
+	
 	chunk_mesh.mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surface_array)
-	chunk_mesh.set_surface_override_material(0, chunk_material)
+	chunk_mesh.set_surface_override_material(0, _chunk_material)
 	
 	gen_collision()
 	
-	add_child(chunk_mesh)
+	await call_deferred("add_child",(chunk_mesh))
 	
 	## Create a VisibleOnScreenNotifier3D, to check if the object is in the scene.
 	var visibilityNotifier = VisibleOnScreenEnabler3D.new()
-	visibilityNotifier.aabb = AABB(Vector3(0,0,0), Vector3(chunk_size.height,0, chunk_size.width))
+	visibilityNotifier.aabb = AABB(Vector3(0,0,0), Vector3(_chunk_size.height * 1.5 ,0, _chunk_size.width * 1.5))
 	visibilityNotifier.screen_exited.connect(_invisible)
 	visibilityNotifier.screen_entered.connect(_visible)
 	
-	add_child(visibilityNotifier)
-	
+	await call_deferred("add_child",visibilityNotifier)
+	_perf_timer_generate = Time.get_ticks_msec() - _perfTimer_generate_start
 	pass # Replace with function body.
 
 
 
 func _visible():
-	print("Visible! %s" % name)
+	#print("Visible! %s" % name)
 	chunk_mesh.visible = true
 	pass
 	
 func _invisible():
-	print("Not Visible! %s" % name)
+	#print("Not Visible! %s" % name)
 	chunk_mesh.visible = false
 	pass
